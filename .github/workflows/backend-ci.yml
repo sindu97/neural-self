@@ -55,13 +55,18 @@ jobs:
           cache-dependency-path: backend/pyproject.toml
       - run: pip install -e ".[dev]"
 
-      # Build the schema from an empty database using migrations alone.
+      # Build the schema from an empty database using migrations alone,
+      # through the same commands developers use.
       - name: Migrations apply from scratch
-        run: alembic upgrade head
+        run: python -m neuralshelf.cli migrate
       - name: Models match the migrated schema
         run: alembic check
-      - name: Migrations downgrade and re-apply cleanly
-        run: alembic downgrade base && alembic upgrade head
+      - name: Rollback, fresh and seed commands work
+        run: |
+          python -m neuralshelf.cli migrate:rollback --steps 8
+          python -m neuralshelf.cli migrate
+          python -m neuralshelf.cli migrate:fresh --yes --seed
+          python -m neuralshelf.cli migrate:status
 
       # Unit and integration tests; evaluation tests need Ollama and are skipped.
       - name: Tests

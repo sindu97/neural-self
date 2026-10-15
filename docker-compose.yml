@@ -32,11 +32,11 @@ services:
     volumes:
       - neuralshelf_pgadmin_data:/var/lib/pgadmin
 
-  # One-off: applies database migrations, then exits. api and worker wait for it.
-  migrate:
+  api:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: neuralshelf-api
     env_file:
       - ./backend/.env
     environment: &backend-environment
@@ -47,23 +47,6 @@ services:
       UPLOAD_DIR: /app/storage/uploads
       APP_ENV: development
       LOG_FORMAT: text
-    volumes:
-      - ./backend:/app
-    command: ["alembic", "upgrade", "head"]
-    healthcheck:
-      disable: true  # the image's check probes the API's HTTP port
-    depends_on:
-      db:
-        condition: service_healthy
-
-  api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: neuralshelf-api
-    env_file:
-      - ./backend/.env
-    environment: *backend-environment
     ports:
       - "8000:8000"
     volumes:
@@ -81,8 +64,8 @@ services:
       - --reload-dir
       - /app/src
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      db:
+        condition: service_healthy
 
   # Processes queued document ingestion jobs. Scale out with:
   #   docker compose up -d --scale worker=3
@@ -105,8 +88,8 @@ services:
     stop_grace_period: 2m
     restart: unless-stopped
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      db:
+        condition: service_healthy
 
 volumes:
   neuralshelf_pgdata:

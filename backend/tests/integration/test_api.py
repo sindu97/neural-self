@@ -6,9 +6,9 @@ import pytest
 from sqlalchemy import func, select
 
 from neuralshelf.core.messages import Message
+from neuralshelf.db.seeders.sample_pdf import make_pdf
 from neuralshelf.features.auth.models import RefreshToken
 from neuralshelf.features.documents.models import Chunk
-from tests.pdf_factory import make_pdf
 
 pytestmark = pytest.mark.integration
 

@@ -35,7 +35,8 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/live', timeout=3)"
 
-# Run `alembic upgrade head` (the compose `migrate` service) before starting.
+# Apply migrations as a release step before starting:
+#   docker run --rm <image> python -m neuralshelf.cli migrate
 # Behind a reverse proxy, also set FORWARDED_ALLOW_IPS to the proxy's address
 # so rate limiting sees real client IPs.
 CMD ["uvicorn", "neuralshelf.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--no-access-log"]

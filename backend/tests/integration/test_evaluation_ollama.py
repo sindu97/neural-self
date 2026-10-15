@@ -9,9 +9,9 @@ import pytest
 
 from neuralshelf.core.config import get_settings
 from neuralshelf.core.constants import EMBEDDING_DIMENSIONS
+from neuralshelf.db.seeders.sample_pdf import make_pdf
 from neuralshelf.integrations.dependencies import get_chat_client, get_embedding_client
 from neuralshelf.main import app
-from tests.pdf_factory import make_pdf
 
 pytestmark = [pytest.mark.evaluation, pytest.mark.integration]
 

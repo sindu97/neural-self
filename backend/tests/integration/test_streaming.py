@@ -7,8 +7,8 @@ from sqlalchemy import func, select
 
 from neuralshelf.core.exceptions import LLMServiceError
 from neuralshelf.core.messages import Message
+from neuralshelf.db.seeders.sample_pdf import make_pdf
 from neuralshelf.features.chat.models import ChatMessage
-from tests.pdf_factory import make_pdf
 
 pytestmark = pytest.mark.integration
 

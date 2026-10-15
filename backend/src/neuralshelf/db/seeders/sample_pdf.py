@@ -1,4 +1,4 @@
-"""Build small, valid PDFs with real text for tests."""
+"""Build small, valid PDFs with real text (sample data for seeders and tests)."""
 
 
 def make_pdf(pages: list[str]) -> bytes:

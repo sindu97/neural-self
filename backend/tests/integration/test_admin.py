@@ -4,9 +4,9 @@ import pytest
 from sqlalchemy import select
 
 from neuralshelf import cli
+from neuralshelf.db.seeders.sample_pdf import make_pdf
 from neuralshelf.features.documents.models import IngestionJob, JobStatus
 from neuralshelf.features.users.models import User
-from tests.pdf_factory import make_pdf
 
 pytestmark = pytest.mark.integration
 

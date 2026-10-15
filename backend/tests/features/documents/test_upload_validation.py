@@ -1,9 +1,9 @@
 import pytest
 
+from neuralshelf.db.seeders.sample_pdf import make_pdf
 from neuralshelf.features.documents.exceptions import FileTooLargeError, InvalidFileError
 from neuralshelf.features.documents.service import sanitize_filename, validate_upload
 from neuralshelf.integrations.parsers.pdf import extract_pdf_pages
-from tests.pdf_factory import make_pdf
 
 
 def test_sanitize_filename_strips_paths_and_control_characters() -> None:

@@ -6,9 +6,9 @@ from sqlalchemy import func, select, update
 
 from neuralshelf.core.exceptions import EmbeddingServiceError
 from neuralshelf.core.messages import Message
+from neuralshelf.db.seeders.sample_pdf import make_pdf
 from neuralshelf.features.documents.job_repository import JobRepository
 from neuralshelf.features.documents.models import Chunk, Document, IngestionJob, JobStatus
-from tests.pdf_factory import make_pdf
 
 pytestmark = pytest.mark.integration
 
