@@ -1,0 +1,113 @@
+
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: neuralshelf-db
+    environment:
+      POSTGRES_DB: neuralshelf
+      POSTGRES_USER: neuralshelf
+      POSTGRES_PASSWORD: neuralshelf_local_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - neuralshelf_pgdata:/var/lib/postgresql/data
+      - ./infra/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neuralshelf -d neuralshelf"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: neuralshelf-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: pgadmin_local_dev
+    ports:
+      - "5050:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - neuralshelf_pgadmin_data:/var/lib/pgadmin
+
+  # One-off: applies database migrations, then exits. api and worker wait for it.
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
+    environment: &backend-environment
+      DATABASE_URL: postgresql://neuralshelf:neuralshelf_local_dev@db:5432/neuralshelf
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      # Development: use the mounted source instead of the code baked into the image.
+      PYTHONPATH: /app/src
+      UPLOAD_DIR: /app/storage/uploads
+      APP_ENV: development
+      LOG_FORMAT: text
+    volumes:
+      - ./backend:/app
+    command: ["alembic", "upgrade", "head"]
+    healthcheck:
+      disable: true  # the image's check probes the API's HTTP port
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: neuralshelf-api
+    env_file:
+      - ./backend/.env
+    environment: *backend-environment
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    # Development: auto-reload on code changes.
+    command:
+      - uvicorn
+      - neuralshelf.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --no-access-log
+      - --reload
+      - --reload-dir
+      - /app/src
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # Processes queued document ingestion jobs. Scale out with:
+  #   docker compose up -d --scale worker=3
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
+    environment: *backend-environment
+    volumes:
+      # Shares backend/storage/uploads with the api service.
+      - ./backend:/app
+    # Runs as PID 1 so SIGTERM reaches the worker's own handler. No auto-reload:
+    # after code changes run `docker compose restart worker` (graceful).
+    command: ["python", "-m", "neuralshelf.workers.ingestion_worker"]
+    healthcheck:
+      disable: true  # no HTTP server; liveness is visible via /admin/ingestion-jobs/stats
+    # Time allowed to finish the current job on `docker compose stop`.
+    stop_grace_period: 2m
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  neuralshelf_pgdata:
+  neuralshelf_pgadmin_data:
