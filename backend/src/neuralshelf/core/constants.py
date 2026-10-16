@@ -11,6 +11,14 @@ DEFAULT_LOG_FORMAT = (
 
 REQUEST_ID_HEADER = "X-Request-ID"
 
+# Browsers send the refresh-token cookie automatically, so cookie-based
+# refresh/revoke requests must also carry this custom header. Other sites
+# can't add it to a cross-site request (CORS blocks it), which stops CSRF.
+CSRF_HEADER = "X-NeuralShelf-CSRF"
+# Native clients send "X-Auth-Mode: token" to receive the refresh token in
+# the response body (for OS secure storage) instead of a cookie.
+AUTH_MODE_HEADER = "X-Auth-Mode"
+
 # Must match the output size of the configured embedding model
 # (nomic-embed-text produces 768-dimensional vectors). Changing it requires
 # a migration of chunks.embedding and re-ingesting every document.

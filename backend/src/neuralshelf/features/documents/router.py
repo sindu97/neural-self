@@ -31,6 +31,7 @@ def get_document_service(
     db: Annotated[Session, Depends(get_db)],
     storage: Annotated[LocalFileStorage, Depends(get_file_storage)],
 ) -> DocumentService:
+    """Dependency: the document service for this request."""
     return DocumentService(db, storage)
 
 

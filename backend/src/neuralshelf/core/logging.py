@@ -21,13 +21,19 @@ _STANDARD_ATTRS = set(logging.makeLogRecord({}).__dict__) | {"message", "asctime
 
 
 class RequestIdFilter(logging.Filter):
+    """Attach the current request (or worker job) ID to every log record."""
+
     def filter(self, record: logging.LogRecord) -> bool:
+        """Set ``record.request_id``; never drops a record."""
         record.request_id = request_id_var.get()
         return True
 
 
 class JsonFormatter(logging.Formatter):
+    """One JSON object per log line, including any ``extra`` fields."""
+
     def format(self, record: logging.LogRecord) -> str:
+        """Serialise ``record`` as a JSON string."""
         entry = {
             "timestamp": datetime.fromtimestamp(record.created, UTC).isoformat(),
             "level": record.levelname,

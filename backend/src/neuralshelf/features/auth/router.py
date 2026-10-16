@@ -2,13 +2,18 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from sqlalchemy.orm import Session
 
 from neuralshelf.core.config import get_settings
 from neuralshelf.core.messages import Message, MessageCode
 from neuralshelf.core.schemas import ApiResponse
 from neuralshelf.db.session import get_db
+from neuralshelf.features.auth.cookies import (
+    clear_refresh_cookie,
+    deliver_tokens,
+    refresh_token_from_request,
+)
 from neuralshelf.features.auth.dependencies import get_current_user
 from neuralshelf.features.auth.rate_limit import RateLimiter, client_ip
 from neuralshelf.features.auth.schemas import (
@@ -17,7 +22,7 @@ from neuralshelf.features.auth.schemas import (
     RevokeTokenRequest,
     SignupRequest,
 )
-from neuralshelf.features.auth.service import AuthService
+from neuralshelf.features.auth.service import AuthService, InvalidRefreshTokenError
 from neuralshelf.features.users.models import User
 from neuralshelf.features.users.schemas import UserResponse
 
@@ -51,8 +56,14 @@ def signup(payload: SignupRequest, request: Request, db: Db) -> ApiResponse[User
 
 
 @router.post("/login", response_model=ApiResponse)
-def login(payload: LoginRequest, request: Request, db: Db) -> ApiResponse:
-    """Authenticate a user and issue access and refresh tokens."""
+def login(
+    payload: LoginRequest, request: Request, response: Response, db: Db
+) -> ApiResponse:
+    """Authenticate and issue tokens.
+
+    Browsers get the refresh token as an httpOnly cookie; send
+    ``X-Auth-Mode: token`` to receive it in the body instead (native apps).
+    """
     settings = get_settings()
     email = str(payload.email).lower()
     limiter = RateLimiter(db)
@@ -67,30 +78,54 @@ def login(payload: LoginRequest, request: Request, db: Db) -> ApiResponse:
         success=True,
         code=MessageCode.SUCCESS,
         message=Message.LOGIN_SUCCESSFUL,
-        data=[result],
+        data=[deliver_tokens(request, response, result)],
     )
 
 
 @router.post("/refresh", response_model=ApiResponse)
-def refresh(payload: RefreshTokenRequest, request: Request, db: Db) -> ApiResponse:
-    """Exchange a refresh token for a new access and refresh token pair."""
+def refresh(
+    request: Request,
+    response: Response,
+    db: Db,
+    payload: RefreshTokenRequest | None = None,
+) -> ApiResponse:
+    """Rotate the refresh token and issue a new access token.
+
+    Browsers send no body: the cookie is used, together with the
+    ``X-NeuralShelf-CSRF: 1`` header. Native apps send the token in the body.
+    """
     RateLimiter(db).hit(
         f"refresh:ip:{client_ip(request)}", limit=get_settings().rate_limit_refresh_per_ip
     )
-    result = AuthService(db).refresh(refresh_token=payload.refresh_token)
+    token = refresh_token_from_request(request, payload.refresh_token if payload else None)
+    if token is None:
+        raise InvalidRefreshTokenError()
+
+    result = AuthService(db).refresh(refresh_token=token)
 
     return ApiResponse(
         success=True,
         code=MessageCode.SUCCESS,
         message=Message.TOKEN_REFRESHED,
-        data=[result],
+        data=[deliver_tokens(request, response, result)],
     )
 
 
 @router.post("/revoke", response_model=ApiResponse)
-def revoke(payload: RevokeTokenRequest, db: Db) -> ApiResponse:
-    """Revoke a refresh token so it can no longer be used."""
-    AuthService(db).revoke(refresh_token=payload.refresh_token)
+def revoke(
+    request: Request,
+    response: Response,
+    db: Db,
+    payload: RevokeTokenRequest | None = None,
+) -> ApiResponse:
+    """Log out: revoke the refresh token and clear the cookie.
+
+    Always succeeds, so it never reveals whether a token existed.
+    """
+    token = refresh_token_from_request(request, payload.refresh_token if payload else None)
+    if token is not None:
+        AuthService(db).revoke(refresh_token=token)
+    clear_refresh_cookie(response)
 
     return ApiResponse(
         success=True,

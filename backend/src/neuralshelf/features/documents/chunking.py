@@ -6,6 +6,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class TextChunk:
+    """A piece of one page's text, with its position in the document."""
+
     chunk_index: int
     page_number: int | None
     content: str

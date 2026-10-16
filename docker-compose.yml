@@ -91,6 +91,25 @@ services:
       db:
         condition: service_healthy
 
+  # Web app: Vite dev server with hot reload. Open http://localhost:5173.
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile.dev
+    container_name: neuralshelf-web
+    environment:
+      # Vite forwards /api to the api container (same origin for the browser).
+      VITE_PROXY_TARGET: http://api:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./apps/web:/app
+      # The container's own node_modules (Linux binaries), not the host's.
+      - neuralshelf_web_node_modules:/app/node_modules
+    depends_on:
+      - api
+
 volumes:
   neuralshelf_pgdata:
   neuralshelf_pgadmin_data:
+  neuralshelf_web_node_modules:

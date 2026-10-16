@@ -17,6 +17,8 @@ def _utc_now() -> datetime:
 
 
 class MessageRole(StrEnum):
+    """Who wrote a message."""
+
     SYSTEM = "system"
     USER = "user"
     ASSISTANT = "assistant"

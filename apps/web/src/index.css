@@ -1,0 +1,167 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/inter';
+
+/*
+ * NeuralShelf theme. Colours come from the product design (neuralshelf-preview.html).
+ * Components use the semantic names (primary, muted, border, ...); change the
+ * values here, never hard-code colours in components.
+ */
+
+@theme inline {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-heading: var(--font-sans);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle: var(--subtle);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.25);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  --shadow-card: 0 3px 12px rgb(37 48 82 / 0.016);
+  --shadow-soft: 0 12px 32px rgb(31 39 73 / 0.055);
+  --shadow-hero: 0 14px 28px rgb(101 88 232 / 0.15);
+}
+
+:root {
+  --radius: 0.75rem;
+
+  --background: #f7f8fc;
+  --foreground: #182230;
+  --card: #ffffff;
+  --card-foreground: #182230;
+  --popover: #ffffff;
+  --popover-foreground: #182230;
+
+  --primary: #6558e8;
+  --primary-foreground: #ffffff;
+  --primary-hover: #5144d6;
+  --secondary: #f0eeff;
+  --secondary-foreground: #6558e8;
+  --accent: #f0eeff;
+  --accent-foreground: #6558e8;
+
+  --muted: #f3f4f8;
+  --muted-foreground: #7b8495;
+  --subtle: #9aa1b1;
+
+  --destructive: #e45e5b;
+  --destructive-soft: #fff0ef;
+  --success: #1b9a72;
+  --success-soft: #e8f8f1;
+  --warning: #c78324;
+  --warning-soft: #fff5e5;
+
+  --border: #e8ebf2;
+  --input: #e8ebf2;
+  --ring: #6558e8;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #697386;
+  --sidebar-primary: #6558e8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f0eeff;
+  --sidebar-accent-foreground: #6558e8;
+  --sidebar-border: #e8ebf2;
+  --sidebar-ring: #6558e8;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans antialiased;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  /* The violet banner and brand mark from the design. */
+  .bg-brand-gradient {
+    background: linear-gradient(110deg, #6659e8 0%, #7769ee 56%, #8a7df5 100%);
+  }
+  .bg-brand-mark {
+    background: linear-gradient(140deg, #8074ff, #5848dc);
+  }
+  .bg-brand-soft {
+    background: linear-gradient(145deg, #f2efff, #f8f7ff);
+  }
+  .eyebrow {
+    @apply text-[11px] font-bold tracking-[0.14em] text-primary uppercase;
+  }
+}
+
+/* Markdown inside chat answers. */
+@layer components {
+  .prose-chat > * + * {
+    margin-top: 0.6em;
+  }
+  .prose-chat ul {
+    list-style: disc;
+    padding-left: 1.25em;
+  }
+  .prose-chat ol {
+    list-style: decimal;
+    padding-left: 1.25em;
+  }
+  .prose-chat li + li {
+    margin-top: 0.25em;
+  }
+  .prose-chat strong {
+    font-weight: 650;
+  }
+  .prose-chat code {
+    @apply rounded bg-muted px-1 py-0.5 font-mono text-[12px];
+  }
+  .prose-chat pre {
+    @apply overflow-x-auto rounded-lg bg-muted p-3;
+  }
+  .prose-chat a {
+    @apply text-primary underline;
+  }
+}

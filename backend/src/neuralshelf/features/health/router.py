@@ -1,3 +1,5 @@
+"""Health endpoints for load balancers and container orchestrators."""
+
 from fastapi import APIRouter, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -11,6 +13,7 @@ router = APIRouter(prefix="/health", tags=["Health"])
 
 @router.get("/live", response_model=ApiResponse)
 def liveness_check() -> ApiResponse:
+    """Liveness: the process is up and responding."""
     return ApiResponse(
         success=True,
         code=MessageCode.SERVICE_HEALTHY,
@@ -21,6 +24,7 @@ def liveness_check() -> ApiResponse:
 
 @router.get("/ready", response_model=ApiResponse)
 def readiness_check():
+    """Readiness: the API can reach the database (503 when it can't)."""
     if not check_database_connection():
         response = ApiResponse(
             success=False,

@@ -20,6 +20,8 @@ class ApiResponse[T](BaseModel):
 
 
 class PaginationMeta(BaseModel):
+    """Pagination details returned alongside list data."""
+
     limit: int
     offset: int
     total: int
@@ -32,6 +34,8 @@ class PaginatedResponse[T](ApiResponse[T]):
 
 
 class PaginationParams(BaseModel):
+    """Validated ``limit`` and ``offset`` query parameters."""
+
     limit: int
     offset: int
 

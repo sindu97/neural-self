@@ -34,6 +34,8 @@ class InvalidFileError(ApplicationError):
 
 
 class FileTooLargeError(ApplicationError):
+    """The upload exceeds MAX_UPLOAD_SIZE_MB (HTTP 413)."""
+
     def __init__(self, max_mb: int) -> None:
         super().__init__(
             message=Message.FILE_TOO_LARGE.format(max_mb=max_mb),

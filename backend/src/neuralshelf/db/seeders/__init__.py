@@ -1,4 +1,4 @@
-"""Development seed data: python -m neuralshelf.cli db:seed
+"""Development seed data (``python -m neuralshelf.cli db:seed``).
 
 Seeders are idempotent: running them again skips anything that already
 exists. They refuse to run in production, because they create accounts
@@ -22,6 +22,8 @@ from neuralshelf.features.users.repository import UserRepository
 
 @dataclass(frozen=True)
 class SeedAccount:
+    """An account the seeders create, with a well-known development password."""
+
     name: str
     email: str
     password: str
@@ -42,6 +44,7 @@ SAMPLE_PAGES = [
 
 
 def seed_account(db: Session, account: SeedAccount) -> User:
+    """Create ``account`` unless a user with its email exists; return the user either way."""
     repository = UserRepository(db)
     user = repository.get_by_email(account.email)
     if user is not None:
@@ -81,11 +84,13 @@ def seed_sample_document(db: Session, owner: User) -> None:
 
 
 def seed_users(db: Session) -> None:
+    """Seed the admin and demo accounts."""
     seed_account(db, ADMIN)
     seed_account(db, DEMO)
 
 
 def seed_documents(db: Session) -> None:
+    """Seed the demo user's sample document (processed by the worker)."""
     demo = UserRepository(db).get_by_email(DEMO.email) or seed_account(db, DEMO)
     seed_sample_document(db, demo)
 
@@ -98,5 +103,6 @@ SEEDERS: dict[str, Callable[[Session], None]] = {
 
 
 def seed_all(db: Session) -> None:
+    """Run every seeder in order."""
     for seeder in SEEDERS.values():
         seeder(db)

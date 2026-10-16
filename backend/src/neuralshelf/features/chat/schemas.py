@@ -14,17 +14,22 @@ from neuralshelf.features.chat.models import ChatMessage, MessageRole
 
 
 class ConversationCreateRequest(BaseModel):
+    """Body of ``POST /conversations``. The title is optional."""
+
     title: str | None = Field(default=None, max_length=200)
 
     @field_validator("title")
     @classmethod
     def normalize_title(cls, value: str | None) -> str | None:
+        """Collapse whitespace; a blank title becomes None and is set from the first question."""
         if value is None:
             return None
         return " ".join(value.split()) or None
 
 
 class ConversationResponse(BaseModel):
+    """A conversation as returned by the API."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
@@ -34,6 +39,8 @@ class ConversationResponse(BaseModel):
 
 
 class MessageCreateRequest(BaseModel):
+    """A question, with optional retrieval settings."""
+
     content: str = Field(min_length=1, max_length=4000)
     top_k: int = Field(default=RETRIEVAL_DEFAULT_TOP_K, ge=1, le=RETRIEVAL_MAX_TOP_K)
     document_ids: list[UUID] = Field(
@@ -45,6 +52,7 @@ class MessageCreateRequest(BaseModel):
     @field_validator("content")
     @classmethod
     def strip_content(cls, value: str) -> str:
+        """Trim the question and reject a blank one."""
         value = value.strip()
         if not value:
             raise ValueError("Must not be blank")
@@ -64,6 +72,8 @@ class Citation(BaseModel):
 
 
 class MessageResponse(BaseModel):
+    """A message as returned by the API, with its citations."""
+
     id: UUID
     conversation_id: UUID
     role: MessageRole
@@ -73,6 +83,7 @@ class MessageResponse(BaseModel):
 
     @classmethod
     def from_model(cls, message: ChatMessage) -> "MessageResponse":
+        """Build the response from a stored message, reading citations from its metadata."""
         metadata = message.message_metadata or {}
         return cls(
             id=message.id,

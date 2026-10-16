@@ -101,6 +101,7 @@ def test_login_and_me(client) -> None:
 
     tokens = login(client).json()["data"][0]
     assert tokens["token_type"] == "bearer"
+    assert "refresh_token" not in tokens  # browsers get it as an httpOnly cookie
     assert tokens["user"]["is_admin"] is False
 
     me = client.get(f"{API}/auth/me", headers={"Authorization": f"Bearer {tokens['access_token']}"})
@@ -115,25 +116,27 @@ def test_missing_or_invalid_token_is_401_with_challenge(client) -> None:
         assert response.headers["WWW-Authenticate"] == "Bearer"
 
 
+TOKEN_MODE = {"X-Auth-Mode": "token"}
+
+
 def test_refresh_token_reuse_revokes_every_session(client) -> None:
     signup(client)
-    first = login(client).json()["data"][0]["refresh_token"]
-    other_device = login(client).json()["data"][0]["refresh_token"]
+    credentials = {"email": "dana@example.com", "password": PASSWORD}
+    first = client.post(f"{API}/auth/login", json=credentials, headers=TOKEN_MODE)
+    other = client.post(f"{API}/auth/login", json=credentials, headers=TOKEN_MODE)
+    first_token = first.json()["data"][0]["refresh_token"]
+    other_device = other.json()["data"][0]["refresh_token"]
 
-    rotated = client.post(f"{API}/auth/refresh", json={"refresh_token": first})
-    assert rotated.status_code == 200
+    def refresh(token: str):
+        return client.post(
+            f"{API}/auth/refresh", json={"refresh_token": token}, headers=TOKEN_MODE
+        )
+
+    assert refresh(first_token).status_code == 200
 
     # Replaying the old token looks like theft: it fails and kills all sessions.
-    assert_error(
-        client.post(f"{API}/auth/refresh", json={"refresh_token": first}),
-        401,
-        "INVALID_REFRESH_TOKEN",
-    )
-    assert_error(
-        client.post(f"{API}/auth/refresh", json={"refresh_token": other_device}),
-        401,
-        "INVALID_REFRESH_TOKEN",
-    )
+    assert_error(refresh(first_token), 401, "INVALID_REFRESH_TOKEN")
+    assert_error(refresh(other_device), 401, "INVALID_REFRESH_TOKEN")
 
 
 def test_revoke_is_idempotent_and_does_not_reveal_tokens(client) -> None:

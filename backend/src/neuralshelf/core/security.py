@@ -18,14 +18,21 @@ REFRESH_TOKEN_BYTES = 48
 
 
 def hash_password(password: str) -> str:
+    """Hash a password with the recommended algorithm (Argon2)."""
     return _password_hash.hash(password)
 
 
 def verify_password(password: str, password_hash: str) -> bool:
+    """Return True if ``password`` matches ``password_hash``."""
     return _password_hash.verify(password, password_hash)
 
 
 def create_access_token(user_id: UUID) -> tuple[str, int]:
+    """Create a signed access JWT for ``user_id``.
+
+    Returns:
+        The token and its lifetime in seconds.
+    """
     settings = get_settings()
     expires_in = settings.access_token_expire_minutes * 60
     issued_at = datetime.now(UTC)

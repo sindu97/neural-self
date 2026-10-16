@@ -26,6 +26,8 @@ MAX_ERROR_LENGTH = 2000
 
 
 class JobRepository:
+    """Data access for ingestion jobs. See the module docstring for the concurrency model."""
+
     def __init__(self, db: Session) -> None:
         self.db = db
 
@@ -51,9 +53,11 @@ class JobRepository:
         return self.db.scalar(statement)
 
     def has_active_job(self, document_id: UUID) -> bool:
+        """Whether the document already has a queued or running job."""
         return self.get_active_for_document(document_id) is not None
 
     def get(self, job_id: UUID) -> IngestionJob | None:
+        """The job with this id, or None."""
         return self.db.get(IngestionJob, job_id)
 
     def list_with_documents(
@@ -151,6 +155,7 @@ class JobRepository:
         return self.db.scalars(statement).one_or_none()
 
     def extend_lease(self, *, job_id: UUID, worker_id: str, lease_seconds: int) -> bool:
+        """Heartbeat: push the lease end forward. False if this worker no longer owns the job."""
         return self._fenced_update(
             job_id,
             worker_id,
@@ -158,6 +163,7 @@ class JobRepository:
         )
 
     def mark_succeeded(self, *, job_id: UUID, worker_id: str) -> bool:
+        """Finish the job successfully. False if this worker no longer owns the job."""
         return self._fenced_update(
             job_id,
             worker_id,
@@ -170,6 +176,10 @@ class JobRepository:
     def schedule_retry(
         self, *, job_id: UUID, worker_id: str, error: str, delay_seconds: float
     ) -> bool:
+        """Requeue the job to run after ``delay_seconds``.
+
+        Returns False if this worker no longer owns the job.
+        """
         return self._fenced_update(
             job_id,
             worker_id,
@@ -181,6 +191,10 @@ class JobRepository:
         )
 
     def mark_failed(self, *, job_id: UUID, worker_id: str, error: str) -> bool:
+        """Fail the job for good, keeping ``error`` for admins.
+
+        Returns False if this worker no longer owns the job.
+        """
         return self._fenced_update(
             job_id,
             worker_id,

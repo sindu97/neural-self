@@ -18,12 +18,14 @@ class ConversationRepository:
         self.db = db
 
     def create(self, *, user_id: UUID, title: str | None) -> Conversation:
+        """Insert a conversation (flushed, not committed)."""
         conversation = Conversation(user_id=user_id, title=title)
         self.db.add(conversation)
         self.db.flush()
         return conversation
 
     def get_owned(self, *, user_id: UUID, conversation_id: UUID) -> Conversation | None:
+        """The conversation if it exists and belongs to ``user_id``, else None."""
         statement = select(Conversation).where(
             Conversation.id == conversation_id,
             Conversation.user_id == user_id,
@@ -33,6 +35,7 @@ class ConversationRepository:
     def list_owned(
         self, *, user_id: UUID, limit: int, offset: int
     ) -> tuple[Sequence[Conversation], int]:
+        """The user's conversations, most recently active first, and their total count."""
         statement = (
             select(Conversation)
             .where(Conversation.user_id == user_id)
@@ -46,6 +49,7 @@ class ConversationRepository:
         return self.db.scalars(statement).all(), total or 0
 
     def delete(self, conversation: Conversation) -> None:
+        """Delete a conversation; its messages go with it (ON DELETE CASCADE)."""
         # messages are removed by the ON DELETE CASCADE foreign key.
         self.db.execute(delete(Conversation).where(Conversation.id == conversation.id))
 
@@ -88,6 +92,7 @@ class ConversationRepository:
         created_at: datetime,
         metadata: dict[str, Any] | None = None,
     ) -> ChatMessage:
+        """Insert a message (flushed, not committed)."""
         message = ChatMessage(
             conversation_id=conversation_id,
             role=role,

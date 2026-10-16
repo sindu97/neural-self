@@ -44,6 +44,18 @@ markers = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# Alembic generates these; they keep its formatting.
+extend-exclude = ["src/neuralshelf/db/migrations"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
+# D: docstrings (Google style) on every public module, class and function.
+select = ["E", "F", "I", "UP", "B", "D"]
+# __init__ is documented on its class; magic methods explain themselves.
+ignore = ["D105", "D107"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+# Tests are documented by their names.
+"tests/**" = ["D"]

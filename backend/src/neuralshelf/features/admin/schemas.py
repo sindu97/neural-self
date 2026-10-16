@@ -26,11 +26,15 @@ class IngestionJobResponse(BaseModel):
 
 
 class JobStatsResponse(BaseModel):
+    """Ingestion queue health for administrators."""
+
     counts: dict[str, int]
     oldest_due_job_age_seconds: float
     running_with_expired_lease: int
 
 
 class BulkRetryResponse(BaseModel):
+    """Result of requeueing failed documents."""
+
     requeued: int
     document_ids: list[UUID]

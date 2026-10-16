@@ -13,6 +13,8 @@ from neuralshelf.integrations.embeddings.ollama import EmbeddingClient
 
 @dataclass(frozen=True)
 class RetrievedChunk:
+    """A passage found by search, with its source and similarity score."""
+
     chunk_id: int
     document_id: UUID
     filename: str
@@ -23,6 +25,8 @@ class RetrievedChunk:
 
 
 class RetrievalService:
+    """Semantic search over one user's processed documents."""
+
     def __init__(self, db: Session, embedder: EmbeddingClient) -> None:
         self.repository = RetrievalRepository(db)
         self.embedder = embedder

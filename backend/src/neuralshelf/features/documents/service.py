@@ -116,15 +116,22 @@ class DocumentService:
         return document
 
     def list(self, *, user_id: UUID, limit: int, offset: int) -> tuple[Sequence[Document], int]:
+        """The user's documents, newest first, and their total count."""
         return self.repository.list_owned(user_id=user_id, limit=limit, offset=offset)
 
     def get(self, *, user_id: UUID, document_id: UUID) -> Document:
+        """The user's document.
+
+        Raises:
+            DocumentNotFoundError: Missing, or owned by another user.
+        """
         document = self.repository.get_owned(user_id=user_id, document_id=document_id)
         if document is None:
             raise DocumentNotFoundError()
         return document
 
     def delete(self, *, user_id: UUID, document_id: UUID) -> None:
+        """Delete the user's document, its chunks and its stored file."""
         document = self.get(user_id=user_id, document_id=document_id)
         storage_key = document.storage_key
 

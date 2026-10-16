@@ -16,6 +16,7 @@ SYSTEM_PROMPT = (
 
 
 def format_context(chunks: Sequence[RetrievedChunk]) -> str:
+    """Number passages as ``[n] (file, page p)`` so the model can cite them."""
     blocks = []
     for number, chunk in enumerate(chunks, start=1):
         page = f", page {chunk.page_number}" if chunk.page_number is not None else ""

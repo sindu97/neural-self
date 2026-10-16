@@ -27,6 +27,7 @@ class RequestContextMiddleware:
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Handle one ASGI connection; non-HTTP traffic passes through untouched."""
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return

@@ -37,6 +37,8 @@ def client_ip(request: Request) -> str:
 
 
 class RateLimiter:
+    """Counts requests per key in fixed time windows stored in PostgreSQL."""
+
     def __init__(self, db: Session) -> None:
         self.db = db
         self.settings = get_settings()

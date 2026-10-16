@@ -45,6 +45,7 @@ def get_chat_service(
     retrieval: Annotated[RetrievalService, Depends(get_retrieval_service)],
     llm: Annotated[ChatClient, Depends(get_chat_client)],
 ) -> ChatService:
+    """Dependency: the chat service for this request."""
     return ChatService(db, retrieval, llm)
 
 
@@ -101,6 +102,7 @@ def get_conversation(
     current_user: CurrentUser,
     service: Service,
 ) -> ApiResponse[ConversationResponse]:
+    """Get a conversation's details."""
     conversation = service.get_conversation(
         user_id=current_user.id, conversation_id=conversation_id
     )

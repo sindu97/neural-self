@@ -71,7 +71,6 @@ class AuthService:
         password: str,
     ) -> User:
         """Register a user with a securely hashed password."""
-
         existing_user = self.user_repository.get_by_email(email)
 
         if existing_user is not None:
@@ -101,6 +100,12 @@ class AuthService:
             ) from exc
 
     def login(self, *, email: str, password: str) -> dict:
+        """Check credentials and issue tokens.
+
+        Raises:
+            InvalidCredentialsError: Unknown email or wrong password. Both give the
+                same error, so the response never reveals which accounts exist.
+        """
         user = self.user_repository.get_by_email(email)
 
         if user is None or not verify_password(password, user.password_hash):
@@ -146,7 +151,9 @@ class AuthService:
         stored_token.replaced_by_token_id = new_token.id
         self.db.commit()
 
-        return tokens
+        # Web clients keep the access token only in memory, so after a page
+        # reload this is how they find out who is logged in.
+        return {**tokens, "user": UserResponse.model_validate(user).model_dump(mode="json")}
 
     def revoke(self, *, refresh_token: str) -> None:
         """Revoke a refresh token (logout).

@@ -27,6 +27,8 @@ from neuralshelf.db.base import Base
 
 
 class DocumentStatus(StrEnum):
+    """Where a document is in processing, as shown to its owner."""
+
     UPLOADED = "uploaded"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -157,6 +159,8 @@ class Chunk(Base):
 
 
 class JobStatus(StrEnum):
+    """State of one ingestion job."""
+
     QUEUED = "queued"
     RUNNING = "running"
     SUCCEEDED = "succeeded"

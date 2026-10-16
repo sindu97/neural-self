@@ -19,6 +19,8 @@ def _strip_required(value: str) -> str:
 
 
 class SearchRequest(BaseModel):
+    """Body of ``POST /retrieval/search``."""
+
     query: str = Field(min_length=1, max_length=2000)
     top_k: int = Field(default=RETRIEVAL_DEFAULT_TOP_K, ge=1, le=RETRIEVAL_MAX_TOP_K)
     document_ids: list[UUID] = Field(
@@ -31,6 +33,8 @@ class SearchRequest(BaseModel):
 
 
 class SearchResult(BaseModel):
+    """One matching passage, where it came from, and how similar it is."""
+
     chunk_id: int
     document_id: UUID
     filename: str

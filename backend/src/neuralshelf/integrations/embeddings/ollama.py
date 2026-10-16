@@ -14,9 +14,11 @@ logger = logging.getLogger(__name__)
 class EmbeddingClient(Protocol):
     """Anything that can embed document chunks and search queries."""
 
-    def embed_documents(self, texts: list[str]) -> list[list[float]]: ...
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        """Embed passages for storage."""
 
-    def embed_query(self, text: str) -> list[float]: ...
+    def embed_query(self, text: str) -> list[float]:
+        """Embed a search query."""
 
 
 class OllamaEmbeddingClient:
@@ -40,6 +42,7 @@ class OllamaEmbeddingClient:
         self.batch_size = batch_size
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        """Embed passages in batches, with the model's document prefix."""
         embeddings: list[list[float]] = []
         for start in range(0, len(texts), self.batch_size):
             batch = texts[start : start + self.batch_size]
@@ -47,6 +50,7 @@ class OllamaEmbeddingClient:
         return embeddings
 
     def embed_query(self, text: str) -> list[float]:
+        """Embed one search query, with the model's query prefix."""
         return self._embed([f"{self.query_prefix}{text}"])[0]
 
     def _embed(self, inputs: list[str]) -> list[list[float]]:

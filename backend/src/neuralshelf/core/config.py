@@ -59,6 +59,13 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
 
+    # Web clients get the refresh token as an httpOnly cookie that JavaScript
+    # cannot read. Secure (HTTPS-only) defaults to on in production.
+    auth_cookie_name: str = "ns_refresh"
+    auth_cookie_secure: bool | None = None
+    auth_cookie_samesite: Literal["strict", "lax", "none"] = "strict"
+    auth_cookie_domain: str | None = None
+
     upload_dir: Path = _BACKEND_ROOT / "storage" / "uploads"
     max_upload_size_mb: int = Field(default=20, ge=1)
     chunk_size_chars: int = Field(default=1000, ge=100)
@@ -76,18 +83,21 @@ class Settings(BaseSettings):
     @field_validator("cors_origins", mode="before")
     @classmethod
     def split_cors_origins(cls, value: object) -> object:
+        """Accept CORS_ORIGINS as a comma-separated string."""
         if isinstance(value, str):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
 
     @model_validator(mode="after")
     def validate_chunking(self) -> "Settings":
+        """Reject a chunk overlap that is not smaller than the chunk size."""
         if self.chunk_overlap_chars >= self.chunk_size_chars:
             raise ValueError("chunk_overlap_chars must be smaller than chunk_size_chars")
         return self
 
     @model_validator(mode="after")
     def validate_production_secret(self) -> "Settings":
+        """Require a JWT secret of at least 32 characters in production."""
         # HS256 keys shorter than 32 bytes are brute-forceable (RFC 7518 3.2).
         if self.app_env == "production" and len(self.jwt_secret_key.get_secret_value()) < 32:
             raise ValueError("JWT_SECRET_KEY must be at least 32 characters in production")
@@ -99,7 +109,20 @@ class Settings(BaseSettings):
         return self.job_lease_seconds / 4
 
     @property
+    def refresh_cookie_secure(self) -> bool:
+        """Whether the refresh cookie is HTTPS-only: AUTH_COOKIE_SECURE, else on in production."""
+        if self.auth_cookie_secure is not None:
+            return self.auth_cookie_secure
+        return self.app_env == "production"
+
+    @property
+    def refresh_cookie_path(self) -> str:
+        """Only the auth endpoints ever receive the cookie."""
+        return f"{self.api_v1_prefix}/auth"
+
+    @property
     def max_upload_size_bytes(self) -> int:
+        """MAX_UPLOAD_SIZE_MB in bytes."""
         return self.max_upload_size_mb * 1024 * 1024
 
 

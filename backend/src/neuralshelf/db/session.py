@@ -35,8 +35,10 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def get_session_factory() -> sessionmaker[Session]:
-    """Provide the session factory to work that outlives the request's own
-    session, such as saving a streamed answer after the last token."""
+    """Provide the session factory, for work that outlives the request's session.
+
+    For example, saving a streamed answer after its last token.
+    """
     return SessionLocal
 
 

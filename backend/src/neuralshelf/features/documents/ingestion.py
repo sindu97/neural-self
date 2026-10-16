@@ -36,6 +36,8 @@ class LeaseLostError(Exception):
 
 @dataclass(frozen=True)
 class JobContext:
+    """What running a job needs: sessions, file storage, the embedder and the worker id."""
+
     session_factory: sessionmaker[Session]
     storage: LocalFileStorage
     embedder: EmbeddingClient

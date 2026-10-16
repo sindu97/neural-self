@@ -44,6 +44,8 @@ class PermissionDeniedError(ApplicationError):
 
 
 class RateLimitExceededError(ApplicationError):
+    """Too many requests for one rate-limit key (HTTP 429, with Retry-After)."""
+
     def __init__(self, retry_after_seconds: int) -> None:
         super().__init__(
             message=Message.RATE_LIMITED,

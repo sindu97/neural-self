@@ -89,6 +89,8 @@ class LeaseHeartbeat:
 
 
 class IngestionWorker:
+    """Claims ingestion jobs and runs them, one at a time."""
+
     def __init__(self, context: JobContext) -> None:
         self.context = context
 
@@ -144,6 +146,7 @@ class JobNotificationListener:
         self._connection: psycopg.Connection | None = None
 
     def wait(self, timeout: float, stop: threading.Event) -> None:
+        """Block until a job notification arrives, ``timeout`` passes, or ``stop`` is set."""
         try:
             if self._connection is None or self._connection.closed:
                 self._connection = psycopg.connect(self.conninfo, autocommit=True)
@@ -156,16 +159,19 @@ class JobNotificationListener:
             stop.wait(timeout)
 
     def close(self) -> None:
+        """Close the LISTEN connection."""
         if self._connection is not None:
             self._connection.close()
             self._connection = None
 
 
 def build_worker_id() -> str:
+    """A unique, readable id for this worker: host, process id and a random suffix."""
     return f"{socket.gethostname()}:{os.getpid()}:{uuid.uuid4().hex[:8]}"
 
 
 def main() -> None:
+    """Run the worker until SIGTERM or SIGINT."""
     configure_logging()
     settings = get_settings()
 

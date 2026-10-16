@@ -35,6 +35,7 @@ MAX_BULK_RETRY = 500
 
 
 def get_admin_job_service(db: Annotated[Session, Depends(get_db)]) -> AdminJobService:
+    """Dependency: the admin job service for this request."""
     return AdminJobService(db)
 
 
@@ -77,8 +78,11 @@ def list_jobs(
 
 @router.get("/stats", response_model=ApiResponse[JobStatsResponse])
 def job_stats(service: Service) -> ApiResponse[JobStatsResponse]:
-    """Queue health: jobs per status, how long the oldest due job has waited,
-    and running jobs whose worker appears to have died."""
+    """Queue health.
+
+    Jobs per status, how long the oldest due job has waited, and running jobs
+    whose worker appears to have died.
+    """
     return ApiResponse[JobStatsResponse](
         success=True,
         code=MessageCode.SUCCESS,

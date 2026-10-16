@@ -1,3 +1,4 @@
+"""Version 1 of the public API: every feature's router, mounted under /api/v1."""
 
 from fastapi import APIRouter
 

@@ -63,6 +63,8 @@ def _citations(chunks: Sequence[RetrievedChunk]) -> list[dict[str, Any]]:
 
 
 class ChatService:
+    """Conversations and grounded answers, always scoped to one user."""
+
     def __init__(self, db: Session, retrieval: RetrievalService, llm: ChatClient) -> None:
         self.db = db
         self.repository = ConversationRepository(db)
@@ -70,6 +72,7 @@ class ChatService:
         self.llm = llm
 
     def create_conversation(self, *, user_id: UUID, title: str | None) -> Conversation:
+        """Create and commit an empty conversation."""
         conversation = self.repository.create(user_id=user_id, title=title)
         self.db.commit()
         return conversation
@@ -77,15 +80,22 @@ class ChatService:
     def list_conversations(
         self, *, user_id: UUID, limit: int, offset: int
     ) -> tuple[Sequence[Conversation], int]:
+        """The user's conversations, most recently active first, and their total count."""
         return self.repository.list_owned(user_id=user_id, limit=limit, offset=offset)
 
     def get_conversation(self, *, user_id: UUID, conversation_id: UUID) -> Conversation:
+        """The user's conversation.
+
+        Raises:
+            ConversationNotFoundError: Missing, or owned by another user.
+        """
         conversation = self.repository.get_owned(user_id=user_id, conversation_id=conversation_id)
         if conversation is None:
             raise ConversationNotFoundError()
         return conversation
 
     def delete_conversation(self, *, user_id: UUID, conversation_id: UUID) -> None:
+        """Delete the user's conversation and all its messages."""
         conversation = self.get_conversation(user_id=user_id, conversation_id=conversation_id)
         self.repository.delete(conversation)
         self.db.commit()
@@ -93,6 +103,7 @@ class ChatService:
     def list_messages(
         self, *, user_id: UUID, conversation_id: UUID, limit: int, offset: int
     ) -> tuple[Sequence[ChatMessage], int]:
+        """A page of the conversation's messages, oldest first, and their total count."""
         conversation = self.get_conversation(user_id=user_id, conversation_id=conversation_id)
         return self.repository.list_messages(
             conversation_id=conversation.id, limit=limit, offset=offset

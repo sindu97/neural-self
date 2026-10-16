@@ -20,11 +20,13 @@ class DocumentRepository:
         self.db = db
 
     def create(self, document: Document) -> Document:
+        """Insert a document (flushed, not committed)."""
         self.db.add(document)
         self.db.flush()
         return document
 
     def get_owned(self, *, user_id: UUID, document_id: UUID) -> Document | None:
+        """The document if it exists and belongs to ``user_id``, else None."""
         statement = select(Document).where(
             Document.id == document_id,
             Document.user_id == user_id,
@@ -38,6 +40,7 @@ class DocumentRepository:
     def list_owned(
         self, *, user_id: UUID, limit: int, offset: int
     ) -> tuple[Sequence[Document], int]:
+        """The user's documents, newest first, and their total count."""
         statement = (
             select(Document)
             .where(Document.user_id == user_id)
@@ -51,6 +54,7 @@ class DocumentRepository:
         return self.db.scalars(statement).all(), total or 0
 
     def delete(self, document: Document) -> None:
+        """Delete a document; its chunks and jobs go with it (ON DELETE CASCADE)."""
         # chunks are removed by the ON DELETE CASCADE foreign key.
         self.db.execute(delete(Document).where(Document.id == document.id))
 
@@ -60,6 +64,7 @@ class DocumentRepository:
         chunks: Sequence[TextChunk],
         embeddings: Sequence[list[float]],
     ) -> None:
+        """Replace all of a document's chunks with ``chunks`` and their ``embeddings``."""
         self.db.execute(delete(Chunk).where(Chunk.document_id == document_id))
         if chunks:
             self.db.execute(

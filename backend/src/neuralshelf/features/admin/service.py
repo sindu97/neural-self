@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 class JobNotFoundError(ApplicationError):
+    """No ingestion job with this id (HTTP 404)."""
+
     def __init__(self) -> None:
         super().__init__(
             message=Message.JOB_NOT_FOUND, code=MessageCode.JOB_NOT_FOUND, status_code=404
@@ -26,6 +28,8 @@ class JobNotFoundError(ApplicationError):
 
 
 class JobNotFailedError(ApplicationError):
+    """Only failed jobs can be retried (HTTP 409)."""
+
     def __init__(self) -> None:
         super().__init__(
             message=Message.JOB_NOT_FAILED, code=MessageCode.JOB_NOT_FAILED, status_code=409
@@ -33,6 +37,8 @@ class JobNotFailedError(ApplicationError):
 
 
 class AdminJobService:
+    """Operational actions on the ingestion queue, for administrators."""
+
     def __init__(self, db: Session) -> None:
         self.db = db
         self.jobs = JobRepository(db)
@@ -40,9 +46,11 @@ class AdminJobService:
     def list_jobs(
         self, *, status: JobStatus | None, limit: int, offset: int
     ) -> tuple[Sequence[Row], int]:
+        """Jobs, newest first, with their document's owner and filename, and the total count."""
         return self.jobs.list_with_documents(status=status, limit=limit, offset=offset)
 
     def stats(self) -> dict[str, Any]:
+        """Jobs per status, the oldest due job's age, and running jobs with expired leases."""
         return self.jobs.stats()
 
     def retry_job(self, job_id: UUID) -> IngestionJob:

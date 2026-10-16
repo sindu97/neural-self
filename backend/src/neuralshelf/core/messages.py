@@ -2,6 +2,8 @@
 
 
 class MessageCode:
+    """Stable, machine-readable ``code`` values in API responses. Clients branch on these."""
+
     SUCCESS = "SUCCESS"
     SERVICE_HEALTHY = "SERVICE_HEALTHY"
     SERVICE_NOT_READY = "SERVICE_NOT_READY"
@@ -14,6 +16,7 @@ class MessageCode:
     UNAUTHORIZED = "UNAUTHORIZED"
     FORBIDDEN = "FORBIDDEN"
     RATE_LIMITED = "RATE_LIMITED"
+    CSRF_CHECK_FAILED = "CSRF_CHECK_FAILED"
     JOB_NOT_FOUND = "JOB_NOT_FOUND"
     JOB_NOT_FAILED = "JOB_NOT_FAILED"
     EMAIL_ALREADY_REGISTERED = "EMAIL_ALREADY_REGISTERED"
@@ -29,6 +32,8 @@ class MessageCode:
 
 
 class Message:
+    """User-facing ``message`` texts in API responses."""
+
     SERVICE_HEALTHY = "NeuralShelf API is running."
     SERVICE_READY = "NeuralShelf API and database are ready."
     SERVICE_NOT_READY = "NeuralShelf is not ready to handle requests."
@@ -41,6 +46,7 @@ class Message:
     AUTHENTICATION_REQUIRED = "Authentication required."
     PERMISSION_DENIED = "You do not have permission to perform this action."
     RATE_LIMITED = "Too many requests. Please try again later."
+    CSRF_CHECK_FAILED = "Missing security header for a cookie-authenticated request."
     SIGNUP_SUCCESSFUL = "Account created successfully."
     PROFILE_RETRIEVED = "Profile retrieved successfully."
     EMAIL_ALREADY_REGISTERED = "An account with this email already exists."

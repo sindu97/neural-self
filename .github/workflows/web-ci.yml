@@ -1,0 +1,35 @@
+name: Web CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["apps/web/**", ".github/workflows/web-ci.yml"]
+  pull_request:
+    paths: ["apps/web/**", ".github/workflows/web-ci.yml"]
+
+concurrency:
+  group: web-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: apps/web
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.19"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+# Playwright end-to-end tests need the backend, database and Ollama; run them
+# locally with `npm run test:e2e` (or in a full-stack environment).

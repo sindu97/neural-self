@@ -23,6 +23,7 @@ def get_retrieval_service(
     db: Annotated[Session, Depends(get_db)],
     embedder: Annotated[EmbeddingClient, Depends(get_embedding_client)],
 ) -> RetrievalService:
+    """Dependency: the retrieval service for this request."""
     return RetrievalService(db, embedder)
 
 

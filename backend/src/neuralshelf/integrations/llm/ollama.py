@@ -17,7 +17,8 @@ class ChatClient(Protocol):
 
     model: str
 
-    def chat(self, messages: list[dict[str, str]]) -> str: ...
+    def chat(self, messages: list[dict[str, str]]) -> str:
+        """Return the complete reply to ``messages``."""
 
     def stream_chat(self, messages: list[dict[str, str]]) -> Iterator[str]:
         """Yield the reply in text fragments as the model generates them."""
@@ -51,6 +52,11 @@ class OllamaChatClient:
         }
 
     def chat(self, messages: list[dict[str, str]]) -> str:
+        """Return the complete reply.
+
+        Raises:
+            LLMServiceError: Ollama is unreachable or returned an invalid response.
+        """
         try:
             response = httpx.post(
                 f"{self.base_url}/api/chat",

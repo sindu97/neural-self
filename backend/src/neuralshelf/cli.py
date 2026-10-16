@@ -38,6 +38,7 @@ class CommandError(Exception):
 
 
 def alembic_config() -> Config:
+    """Load alembic.ini from the working directory, falling back to the backend root."""
     # Prefer ./alembic.ini (the backend dir, or /app in the Docker image).
     for candidate in (Path.cwd() / "alembic.ini", _BACKEND_ROOT / "alembic.ini"):
         if candidate.exists():
@@ -46,11 +47,13 @@ def alembic_config() -> Config:
 
 
 def refuse_in_production(action: str) -> None:
+    """Raise CommandError when APP_ENV is production; guards destructive commands."""
     if get_settings().app_env == "production":
         raise CommandError(f"Refusing to {action} with APP_ENV=production.")
 
 
 def confirm(prompt: str, *, assume_yes: bool) -> None:
+    """Require the user to type 'yes', unless ``assume_yes``. Refuses without a terminal."""
     if assume_yes:
         return
     if not sys.stdin.isatty():
@@ -62,11 +65,13 @@ def confirm(prompt: str, *, assume_yes: bool) -> None:
 # ---- migrations -------------------------------------------------------------
 
 def migrate(_: argparse.Namespace) -> None:
+    """``migrate``: apply all pending migrations."""
     command.upgrade(alembic_config(), "head")
     print("Database is up to date.")
 
 
 def migrate_status(_: argparse.Namespace) -> None:
+    """``migrate:status``: list every migration as applied or pending."""
     script = ScriptDirectory.from_config(alembic_config())
     with engine.connect() as connection:
         current = MigrationContext.configure(connection).get_current_revision()
@@ -83,6 +88,7 @@ def migrate_status(_: argparse.Namespace) -> None:
 
 
 def migrate_rollback(args: argparse.Namespace) -> None:
+    """``migrate:rollback``: undo the latest ``--steps`` migrations."""
     refuse_in_production("roll back migrations")
     command.downgrade(alembic_config(), f"-{args.steps}")
     print(f"Rolled back {args.steps} migration(s).")
@@ -114,6 +120,7 @@ def migrate_fresh(args: argparse.Namespace) -> None:
 
 
 def make_migration(args: argparse.Namespace) -> None:
+    """``make:migration``: autogenerate a migration from model changes."""
     command.revision(alembic_config(), message=args.message, autogenerate=True)
     print("Review the generated file before applying it: autogenerate can't detect everything.")
 
@@ -121,6 +128,7 @@ def make_migration(args: argparse.Namespace) -> None:
 # ---- seeding and users ------------------------------------------------------
 
 def db_seed(args: argparse.Namespace) -> None:
+    """``db:seed``: run every seeder, or only the one named by ``--only``."""
     refuse_in_production("seed demo accounts")
     from neuralshelf.db.seeders import SEEDERS, seed_all
 
@@ -134,6 +142,7 @@ def db_seed(args: argparse.Namespace) -> None:
 
 
 def set_admin(args: argparse.Namespace) -> None:
+    """``promote-admin`` / ``demote-admin``: set a user's administrator flag."""
     is_admin = args.command == "promote-admin"
     with SessionLocal() as db:
         repository = UserRepository(db)
@@ -148,6 +157,7 @@ def set_admin(args: argparse.Namespace) -> None:
 # ---- entry point ------------------------------------------------------------
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser, with one subcommand per management command."""
     parser = argparse.ArgumentParser(
         prog="python -m neuralshelf.cli",
         description="NeuralShelf management commands.",
@@ -190,6 +200,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run one command and return the exit code: 0 on success, 1 on a CommandError."""
     args = build_parser().parse_args(argv)
     try:
         args.handler(args)

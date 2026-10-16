@@ -14,10 +14,13 @@ from neuralshelf.features.documents.models import Chunk, Document, DocumentStatu
 
 
 class RetrievalRepository:
+    """Read-only similarity queries over chunks."""
+
     def __init__(self, db: Session) -> None:
         self.db = db
 
     def owned_document_ids(self, *, user_id: UUID, document_ids: Sequence[UUID]) -> set[UUID]:
+        """The subset of ``document_ids`` that belong to ``user_id``."""
         statement = select(Document.id).where(
             Document.user_id == user_id,
             Document.id.in_(document_ids),

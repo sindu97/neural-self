@@ -46,5 +46,6 @@ class UserRepository:
         return user
 
     def set_admin(self, user: User, *, is_admin: bool) -> None:
+        """Set the administrator flag (flushed, not committed)."""
         user.is_admin = is_admin
         self.db.flush()

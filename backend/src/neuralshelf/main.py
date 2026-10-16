@@ -1,3 +1,9 @@
+"""The FastAPI application.
+
+Routers, middleware (request IDs, CORS) and error handlers that return every
+error in the common envelope.
+"""
+
 import logging
 from typing import Any
 
@@ -10,7 +16,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from neuralshelf.api.v1.router import api_router
 from neuralshelf.core.config import get_settings
-from neuralshelf.core.constants import REQUEST_ID_HEADER
+from neuralshelf.core.constants import AUTH_MODE_HEADER, CSRF_HEADER, REQUEST_ID_HEADER
 from neuralshelf.core.exceptions import ApplicationError
 from neuralshelf.core.logging import configure_logging
 from neuralshelf.core.messages import Message, MessageCode
@@ -38,9 +44,17 @@ app.include_router(api_router, prefix=settings.api_v1_prefix)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
-    allow_credentials=False,  # bearer tokens in headers; no cookies
+    # Needed for the httpOnly refresh-token cookie. Safe only because origins
+    # are an explicit allow-list (never "*").
+    allow_credentials=True,
     allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", REQUEST_ID_HEADER],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        REQUEST_ID_HEADER,
+        CSRF_HEADER,
+        AUTH_MODE_HEADER,
+    ],
     expose_headers=[REQUEST_ID_HEADER, "Retry-After"],
 )
 app.add_middleware(RequestContextMiddleware)
@@ -59,6 +73,7 @@ def error_response(
     data: list[dict[str, Any]] | None = None,
     headers: dict[str, str] | None = None,
 ) -> JSONResponse:
+    """Build a JSON error response in the common envelope."""
     response = ApiResponse(
         success=False,
         code=code,
@@ -77,6 +92,7 @@ async def application_error_handler(
     request: Request,
     exc: ApplicationError,
 ) -> JSONResponse:
+    """Expected errors (ApplicationError): their own status, code and message."""
     return error_response(
         status_code=exc.status_code,
         code=exc.code,
@@ -90,6 +106,7 @@ async def validation_error_handler(
     request: Request,
     exc: RequestValidationError,
 ) -> JSONResponse:
+    """Invalid requests: 422, with one entry per invalid field in ``data``."""
     errors = [
         {
             "field": ".".join(
@@ -118,6 +135,7 @@ async def http_error_handler(
     request: Request,
     exc: StarletteHTTPException,
 ) -> JSONResponse:
+    """Framework HTTP errors (404, 405, ...) in the common envelope."""
     code, message = _HTTP_ERROR_CODES.get(
         exc.status_code, (MessageCode.HTTP_ERROR, Message.HTTP_ERROR)
     )
@@ -134,6 +152,7 @@ async def unexpected_error_handler(
     request: Request,
     exc: Exception,
 ) -> JSONResponse:
+    """Anything unhandled: a generic 500. Details go to the logs, never to clients."""
     logger.exception("Unhandled application error.")
     return error_response(
         status_code=500,
@@ -144,6 +163,7 @@ async def unexpected_error_handler(
 
 @app.get("/", response_model=ApiResponse, tags=["Root"])
 def root() -> ApiResponse:
+    """Service name and links to the docs and health check."""
     return ApiResponse(
         success=True,
         code=MessageCode.SUCCESS,

@@ -12,6 +12,7 @@ from neuralshelf.integrations.llm.ollama import ChatClient, OllamaChatClient
 
 @lru_cache
 def get_embedding_client() -> EmbeddingClient:
+    """The configured embedding client (cached). Tests override this dependency."""
     settings = get_settings()
     return OllamaEmbeddingClient(
         base_url=settings.ollama_base_url,
@@ -24,6 +25,7 @@ def get_embedding_client() -> EmbeddingClient:
 
 @lru_cache
 def get_chat_client() -> ChatClient:
+    """The configured chat model client (cached). Tests override this dependency."""
     settings = get_settings()
     return OllamaChatClient(
         base_url=settings.ollama_base_url,

@@ -259,9 +259,13 @@ def test_question_without_documents_does_not_call_the_model(
 def test_refresh_rotation_links_old_token_to_new_one(client, session_factory) -> None:
     credentials = {"email": "carol@example.com", "password": "CorrectHorse!42"}
     client.post(f"{API}/auth/signup", json={"name": "Carol", **credentials})
-    old = item(client.post(f"{API}/auth/login", json=credentials))["refresh_token"]
+    token_mode = {"X-Auth-Mode": "token"}
+    login = client.post(f"{API}/auth/login", json=credentials, headers=token_mode)
+    old = item(login)["refresh_token"]
 
-    response = client.post(f"{API}/auth/refresh", json={"refresh_token": old})
+    response = client.post(
+        f"{API}/auth/refresh", json={"refresh_token": old}, headers=token_mode
+    )
     assert response.status_code == 200
 
     with session_factory() as db:
